@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Bubble Animation</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { background-color: black; display: block; }
+    </style>
+</head>
+<body>
+    
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 캔버스 크기를 창 크기에 맞추는 함수
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let circles = [];
+
+        // 원 데이터 생성
+        for(let i = 0; i < 10; i++){
+            circles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 30 + 30, // 30 ~ 60 크기
+                speedX: -3 + Math.random() * 8,
+                speedY: -3 + Math.random() * 8,
+                hue: Math.random() * 360 // 무작위 색상 값 저장
+            });
+        }
+
+        function ani(){
+            // 배경을 완전히 지우지 않고 반투명하게 덮어 잔상 효과(Motion Blur) 구현
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for(let i = 0; i < circles.length; i++){
+                let circle = circles[i];
+
+                circle.x += circle.speedX;
+                circle.y += circle.speedY;
+
+                // 벽 충돌 (유지)
+                if (circle.x - circle.r < 0 || circle.x + circle.r > canvas.width) circle.speedX *= -1;
+                if (circle.y - circle.r < 0 || circle.y + circle.r > canvas.height) circle.speedY *= -1;
+
+
+                // 원 그리기 부분 수정
+                ctx.beginPath();
+                ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+
+                // 1. 그레이디언트 생성
+                let gradient = ctx.createRadialGradient(
+                    circle.x - circle.r * 0.6, circle.y - circle.r * 0.4, circle.r * 0.05, // 하이라이트 위치
+                    circle.x, circle.y, circle.r // 원 중심 및 크기
+                );
+
+                // 2. 색상 설정 (
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');   // 아주 밝은 하이라이트
+                gradient.addColorStop(0.3, `hsla(${circle.hue}, 50%, 70%, 0.3)`); // 중심부 부드러운 색
+                gradient.addColorStop(1, `hsla(${circle.hue}, 10%, 70%, 0)`);    // 가장자리 투명도 0
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // 3. 겹칠 때 더 예쁘게 섞이도록 합성 모드 설정
+                ctx.globalCompositeOperation = 'screen'; 
+
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // 4. 합성 모드 초기화 (중요: 다른 요소에 영향을 주지 않도록)
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            requestAnimationFrame(ani);
+        }
+        ani();
+    </script>
+</body>
+</html>
